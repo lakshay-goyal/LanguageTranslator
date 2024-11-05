@@ -6,16 +6,19 @@ import { RootStackParamList } from '../../App';
 
 const ModeSelector = () => {
     const [mode, setMode] = useState('');
-    const navigator = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
+    const [errorMessage, setErrorMessage] = useState('');
+    const navigator = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
     const handleNext = () => {
+        console.log("Hello");
         if (!mode) {
-            Alert.alert('Please select a mode before proceeding.');
+            
+            setErrorMessage('Please select a mode before proceeding.');
             return;
         }
-        // Handle the next button click, e.g., navigate to the next screen
+        setErrorMessage('');
         console.log(`Selected Mode: ${mode}`);
-        navigator.navigate("Chat")
+        navigator.navigate("Chat");
     };
 
     return (
@@ -24,18 +27,25 @@ const ModeSelector = () => {
             <View style={styles.radioContainer}>
                 <TouchableOpacity 
                     style={[styles.radioButton, mode === 'online' && styles.selectedRadio]} 
-                    onPress={() => setMode('online')}
+                    onPress={() => {
+                        setMode('online');
+                        setErrorMessage('');
+                    }}
                 >
                     <Text style={[styles.radioText, mode === 'online' && styles.selectedText]}>Online</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                     style={[styles.radioButton, mode === 'offline' && styles.selectedRadio]} 
-                    onPress={() => setMode('offline')}
+                    onPress={() => {
+                        setMode('offline');
+                        setErrorMessage('');
+                    }}
                 >
                     <Text style={[styles.radioText, mode === 'offline' && styles.selectedText]}>Offline</Text>
                 </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.button} onPress={handleNext} disabled={!mode}>
+            {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+            <TouchableOpacity style={styles.button} onPress={handleNext}>
                 <Text style={styles.buttonText}>Next</Text>
             </TouchableOpacity>
         </View>
@@ -97,6 +107,11 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 20,
         fontWeight: 'bold',
+    },
+    errorText: {
+        color: 'red', // Error message color
+        marginTop: 10, // Spacing above the error message
+        textAlign: 'center', // Center the error message
     },
 });
 

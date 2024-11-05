@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import { RootStackParamList } from '../../App';
 import { useNavigation } from '@react-navigation/native';
@@ -8,21 +8,34 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 const LanguageSelector = () => {
     const [fromLanguage, setFromLanguage] = useState('');
     const [toLanguage, setToLanguage] = useState('');
-    const navigator = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
-
+    const [errorMessage, setErrorMessage] = useState(''); // State for error message
+    const navigator = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
     const handleNext = () => {
+        // Check if either language is not selected or if they are the same
+        if (!fromLanguage || !toLanguage) {
+            setErrorMessage('Both languages must be selected.'); // Set error message if either is empty
+            return;
+        } else if (fromLanguage === toLanguage) {
+            setErrorMessage('Both languages must be different.'); // Set error message if they are the same
+            return;
+        }
+        // Clear the error message if validation passes
+        setErrorMessage('');
         // Handle the next button click, e.g., navigate to the translation page
         console.log(`From: ${fromLanguage}, To: ${toLanguage}`);
-        navigator.navigate("ModeSelector")
+        navigator.navigate("ModeSelector");
     };
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Select Languages for Translation</Text>
             <RNPickerSelect
-                placeholder={{ label: 'Select From Language...', value: null }}
-                onValueChange={(value) => setFromLanguage(value)}
+                placeholder={{ label: 'Select From Language...', value: null }} // Placeholder only
+                onValueChange={(value) => {
+                    setFromLanguage(value);
+                    setErrorMessage(''); // Clear error message when a selection is made
+                }}
                 items={[
                     { label: 'English', value: 'en' },
                     { label: 'Spanish', value: 'es' },
@@ -32,8 +45,11 @@ const LanguageSelector = () => {
                 style={pickerSelectStyles}
             />
             <RNPickerSelect
-                placeholder={{ label: 'Select To Language...', value: null }}
-                onValueChange={(value) => setToLanguage(value)}
+                placeholder={{ label: 'Select To Language...', value: null }} // Placeholder only
+                onValueChange={(value) => {
+                    setToLanguage(value);
+                    setErrorMessage(''); // Clear error message when a selection is made
+                }}
                 items={[
                     { label: 'English', value: 'en' },
                     { label: 'Spanish', value: 'es' },
@@ -42,6 +58,7 @@ const LanguageSelector = () => {
                 ]}
                 style={pickerSelectStyles}
             />
+            {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null} {/* Display error message */}
             <TouchableOpacity style={styles.button} onPress={handleNext}>
                 <Text style={styles.buttonText}>Next</Text>
             </TouchableOpacity>
@@ -72,6 +89,11 @@ const styles = StyleSheet.create({
         color: '#fff', // White text color
         textAlign: 'center',
         fontSize: 18,
+    },
+    errorText: {
+        color: 'red', // Error message color
+        marginTop: 10, // Spacing above the error message
+        textAlign: 'center', // Center the error message
     },
 });
 

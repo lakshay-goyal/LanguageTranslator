@@ -8,7 +8,7 @@ import { HistoryProvider } from './src/screens/context/HistoryContext';
 import LoginScreen from './src/Auth/LoginScreen';
 import ModeSelector from './src/screens/ModeSelector';
 import SignUpScreen from './src/Auth/SignUpScreen';
-import LanguageSelector from './src/screens/LangugageSelector';
+import LanguageSelector from './src/screens/LanguageSelector';
 
 export type RootStackParamList = {
   LoginScreen: undefined;

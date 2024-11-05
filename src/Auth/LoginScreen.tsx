@@ -6,42 +6,66 @@ import { useNavigation } from '@react-navigation/native';
 import {RootStackParamList} from '../../App'
 import {NativeStackNavigationProp} from '@react-navigation/native-stack'
 
-type SignUpProps = NativeStackScreenProps<RootStackParamList, 'SignUpScreen'>
-
 type LoginProps = NativeStackScreenProps<RootStackParamList, 'LoginScreen'>
 
 export default function LoginScreen({navigation}:LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const navigator = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Simple email regex
+    return emailRegex.test(email);
+  };
 
   const handleLogin = () => {
-    navigator.navigate("LanguageSelector")
-    // Handle login logic here
-    console.log('Email:', email);
-    console.log('Password:', password);
+    let valid = true;
+    setEmailError('');
+    setPasswordError('');
+
+    if (!email.trim()) {
+      setEmailError('Email is required');
+      valid = false;
+    } else if (!validateEmail(email)) {
+      setEmailError('Invalid email format');
+      valid = false;
+    }
+
+    if (!password.trim()) {
+      setPasswordError('Password is required');
+      valid = false;
+    }
+
+    if (valid) {
+      navigator.navigate("LanguageSelector");
+      console.log('Email:', email);
+      console.log('Password:', password);
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome Back!</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, emailError ? styles.inputError : null]}
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
       />
+      {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
       <TextInput
-        style={styles.input}
+        style={[styles.input, passwordError ? styles.inputError : null]}
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
+      {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
@@ -79,6 +103,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     backgroundColor: '#ffffff',
   },
+  inputError: {
+    borderColor: 'red',
+  },
   button: {
     backgroundColor: '#1976d2',
     borderRadius: 10,
@@ -95,5 +122,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: '#0d47a1',
     textAlign: 'center',
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
   },
 });

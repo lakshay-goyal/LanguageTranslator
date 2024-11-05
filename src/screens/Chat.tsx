@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg'; // Importing SVG for the cancel button
 import { RootStackParamList } from '../../App';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useHistory } from './context/HistoryContext';
 
-
 const Chat = () => {
     const [messages, setMessages] = useState<{ id: string; text: string; isUser: boolean }[]>([]);
     const [inputText, setInputText] = useState('');
-    const navigator = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
+    const navigator = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const { addHistoryEntry } = useHistory(); // Get the addHistoryEntry function
 
     const handleSend = () => {
@@ -28,6 +27,11 @@ const Chat = () => {
     };
 
     const handleCancel = () => {
+        // Check if there are no messages before proceeding
+        if (messages.length === 0) {
+            return; // Do nothing if no conversation has started
+        }
+
         const formattedMessages = messages.map(message => ({
             sender: message.isUser ? 'User' : 'Receiver',
             text: message.text,
