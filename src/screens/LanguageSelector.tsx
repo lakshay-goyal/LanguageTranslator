@@ -5,11 +5,16 @@ import { RootStackParamList } from '../../App';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
+type LanguageSelectorProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'LanguageSelector'
+>;
+
 const LanguageSelector = () => {
     const [fromLanguage, setFromLanguage] = useState('');
     const [toLanguage, setToLanguage] = useState('');
     const [errorMessage, setErrorMessage] = useState(''); // State for error message
-    const navigator = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const navigator = useNavigation<LanguageSelectorProp>();
 
     const handleNext = () => {
         // Check if either language is not selected or if they are the same
@@ -23,8 +28,7 @@ const LanguageSelector = () => {
         // Clear the error message if validation passes
         setErrorMessage('');
         // Handle the next button click, e.g., navigate to the translation page
-        console.log(`From: ${fromLanguage}, To: ${toLanguage}`);
-        navigator.navigate("ModeSelector");
+        navigator.navigate("ModeSelector", { from:fromLanguage, to:toLanguage });
     };
 
     return (

@@ -1,13 +1,19 @@
-import { useNavigation } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { RootStackParamList } from '../../App';
 
+type ModeSelectorProps = RouteProp<RootStackParamList, 'ModeSelector'>;
+
 const ModeSelector = () => {
     const [mode, setMode] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const navigator = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+    const route = useRoute<ModeSelectorProps>();
+    const { from, to } = route.params || {};
+    console.log(`From: ${from}, To: ${to}`);
 
     const handleNext = () => {
         console.log("Hello");
@@ -18,7 +24,7 @@ const ModeSelector = () => {
         }
         setErrorMessage('');
         console.log(`Selected Mode: ${mode}`);
-        navigator.navigate("Chat");
+        navigator.navigate("Chat", {from, to, mode});
     };
 
     return (

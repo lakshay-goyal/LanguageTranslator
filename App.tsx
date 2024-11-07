@@ -14,8 +14,15 @@ export type RootStackParamList = {
   LoginScreen: undefined;
   SignUpScreen: undefined;
   LanguageSelector: undefined;
-  ModeSelector: undefined;
-  Chat: undefined;
+  ModeSelector: {
+    from:string, 
+    to:string
+  };
+  Chat: {
+    from:string, 
+    to:string,
+    mode:string
+  };
   History: undefined;
   HistoryDetails: undefined;
 };

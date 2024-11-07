@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg'; // Importing SVG for the cancel button
 import { RootStackParamList } from '../../App';
-import { useNavigation } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useHistory } from './context/HistoryContext';
+
+type ChatProps = RouteProp<RootStackParamList, 'Chat'>;
 
 const Chat = () => {
     const [messages, setMessages] = useState<{ id: string; text: string; isUser: boolean }[]>([]);
@@ -12,16 +14,22 @@ const Chat = () => {
     const navigator = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const { addHistoryEntry } = useHistory(); // Get the addHistoryEntry function
 
+    const route = useRoute<ChatProps>();
+    const { from, to, mode } = route.params || {};
+    console.log(`From: ${from}, To: ${to}, Mode: ${mode}`);
+    
+    
+    
     const handleSend = () => {
         if (inputText.trim()) {
             const newMessage = { id: Date.now().toString(), text: inputText, isUser: true };
             setMessages((prevMessages) => [...prevMessages, newMessage]);
-
+            
             setTimeout(() => {
                 const responseMessage = { id: Date.now().toString(), text: `Response to: ${inputText}`, isUser: false };
                 setMessages((prevMessages) => [...prevMessages, responseMessage]);
             }, 1000);
-
+            
             setInputText('');
         }
     };
