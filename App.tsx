@@ -33,7 +33,7 @@ const App = () => {
     return (
         <HistoryProvider>
             <NavigationContainer>
-                <Stack.Navigator initialRouteName="LoginScreen">
+                <Stack.Navigator initialRouteName="LanguageSelector">
                     <Stack.Screen name="LoginScreen" component={LoginScreen} />
                     <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
                     <Stack.Screen name="LanguageSelector" component={LanguageSelector} />

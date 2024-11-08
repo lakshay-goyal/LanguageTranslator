@@ -1,10 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg'; // Importing SVG for the cancel button
 import { RootStackParamList } from '../../App';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useHistory } from './context/HistoryContext';
+import axios from 'axios';
+type TranslationRequest = {
+    source_lang: string;
+    dest_lang: string;
+    text: string;
+};
 
 type ChatProps = RouteProp<RootStackParamList, 'Chat'>;
 
@@ -14,24 +20,78 @@ const Chat = () => {
     const navigator = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const { addHistoryEntry } = useHistory(); // Get the addHistoryEntry function
 
+    const [buttonClicked, setButtonClicked] = useState(false);
+
     const route = useRoute<ChatProps>();
     const { from, to, mode } = route.params || {};
-    console.log(`From: ${from}, To: ${to}, Mode: ${mode}`);
-    
-    
-    
-    const handleSend = () => {
-        if (inputText.trim()) {
-            const newMessage = { id: Date.now().toString(), text: inputText, isUser: true };
-            setMessages((prevMessages) => [...prevMessages, newMessage]);
-            
-            setTimeout(() => {
-                const responseMessage = { id: Date.now().toString(), text: `Response to: ${inputText}`, isUser: false };
-                setMessages((prevMessages) => [...prevMessages, responseMessage]);
-            }, 1000);
-            
-            setInputText('');
+
+    useEffect(() => {
+        if (buttonClicked) {
+            console.log("API call..");
+            const fetchData = async () => {
+                try{
+                const data: TranslationRequest = {
+                    source_lang: 'en',
+                    dest_lang: 'hi',
+                    text: 'Hello, world!',
+                };
+                
+                const response = await fetch('http://localhost:8000/translate/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+                
+                console.log("balebale");
+                try {
+
+                        // const response = await fetch('http://localhost:8000/translate', {
+                        //     method: 'POST',
+                        //     headers: {
+                        //         'Content-Type': 'application/json',
+                        //     },
+                        //     body: JSON.stringify(data),
+                        // });
+                    
+                        if (!response.ok) {
+                            console.error('Error:', response.status, response.statusText);
+                            const errorMessage = { id: Date.now().toString(), text: 'Error: Could not fetch response.', isUser: false };
+                            setMessages((prevMessages) => [...prevMessages, errorMessage]);
+                        } else {
+                            const result = await response.json();
+                            console.log('API Response:', result);
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        const errorMessage = { id: Date.now().toString(), text: 'Error: Could not fetch response.', isUser: false };
+                        setMessages((prevMessages) => [...prevMessages, errorMessage]);
+                    }
+
+                    console.log("Done2");
+                    console.log(response);
+                    if (response.ok) {
+                        const result = await response.json();
+                        console.log('API Response:', result);
+                    } else {
+                        console.error('Error:', response.statusText);
+                    }
+                    console.log("Done3");
+                }catch (error) {
+                    console.error('Error:', error);
+                }
+            };
+            console.log("Done4");
+
+            fetchData();
         }
+        setButtonClicked(false);
+    }, [buttonClicked]);
+
+    const handleSend = () => {
+        console.log("Hello");
+        setButtonClicked(true);
     };
 
     const handleCancel = () => {
@@ -93,7 +153,6 @@ const Chat = () => {
         </View>
     );
 };
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
