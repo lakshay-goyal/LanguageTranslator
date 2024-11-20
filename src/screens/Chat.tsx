@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
-import Svg, { Path } from 'react-native-svg'; // Importing SVG for the cancel button
+import Svg, { Path } from 'react-native-svg';
 import { RootStackParamList } from '../../App';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useHistory } from './context/HistoryContext';
-import axios from 'axios';
+import { Platform } from 'react-native';
+
 type TranslationRequest = {
-    source_lang: string;
-    dest_lang: string;
     text: string;
+    source_language: string;
+    target_language: string;
+};
+
+interface TranslationResponse {
+    result: string;
 };
 
 type ChatProps = RouteProp<RootStackParamList, 'Chat'>;
@@ -18,86 +23,88 @@ const Chat = () => {
     const [messages, setMessages] = useState<{ id: string; text: string; isUser: boolean }[]>([]);
     const [inputText, setInputText] = useState('');
     const navigator = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-    const { addHistoryEntry } = useHistory(); // Get the addHistoryEntry function
-
+    const { addHistoryEntry } = useHistory();
     const [buttonClicked, setButtonClicked] = useState(false);
-
     const route = useRoute<ChatProps>();
     const { from, to, mode } = route.params || {};
 
     useEffect(() => {
-        if (buttonClicked) {
-            console.log("API call..");
-            const fetchData = async () => {
-                try{
-                const data: TranslationRequest = {
-                    source_lang: 'en',
-                    dest_lang: 'hi',
-                    text: 'Hello, world!',
-                };
-                
-                const response = await fetch('http://localhost:8000/translate/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data),
-                });
-                
-                console.log("balebale");
-                try {
-
-                        // const response = await fetch('http://localhost:8000/translate', {
-                        //     method: 'POST',
-                        //     headers: {
-                        //         'Content-Type': 'application/json',
-                        //     },
-                        //     body: JSON.stringify(data),
-                        // });
-                    
-                        if (!response.ok) {
-                            console.error('Error:', response.status, response.statusText);
-                            const errorMessage = { id: Date.now().toString(), text: 'Error: Could not fetch response.', isUser: false };
-                            setMessages((prevMessages) => [...prevMessages, errorMessage]);
-                        } else {
-                            const result = await response.json();
-                            console.log('API Response:', result);
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
-                        const errorMessage = { id: Date.now().toString(), text: 'Error: Could not fetch response.', isUser: false };
-                        setMessages((prevMessages) => [...prevMessages, errorMessage]);
-                    }
-
-                    console.log("Done2");
-                    console.log(response);
-                    if (response.ok) {
-                        const result = await response.json();
-                        console.log('API Response:', result);
-                    } else {
-                        console.error('Error:', response.statusText);
-                    }
-                    console.log("Done3");
-                }catch (error) {
-                    console.error('Error:', error);
-                }
+        if (!buttonClicked) return;
+      
+        const fetchTranslation = async () => {
+          try {
+            const baseUrl = Platform.select({
+              android: __DEV__ 
+                ? 'http://localhost:8000'
+                : 'http://your-prod-url.com',
+              ios: __DEV__
+                ? 'http://localhost:8000'
+                : 'http://your-prod-url.com',
+            });
+      
+            const data: TranslationRequest = {
+              text: inputText, // Use the actual input text
+              source_language: from,
+              target_language: to
             };
-            console.log("Done4");
+      
+            const response = await fetch(`${baseUrl}/translate/`, {
+              method: 'POST',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(data),
+            });
+      
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Server error: ${response.status}`);
+            }
+      
+            const result: TranslationResponse = await response.json();
+            
+            // First add the user's message
+            setMessages(prevMessages => [...prevMessages, {
+              id: Date.now().toString(),
+              text: inputText,
+              isUser: true
+            }]);
 
-            fetchData();
-        }
+            // Then add the translation response
+            setTimeout(() => {
+              setMessages(prevMessages => [...prevMessages, {
+                id: (Date.now() + 1).toString(),
+                text: result.result,
+                isUser: false
+              }]);
+            }, 500);
+
+            setInputText(''); // Clear input after sending
+      
+          } catch (error) {
+            const errorMessage = {
+              id: Date.now().toString(),
+              text: `Error: ${error.message}`,
+              isUser: false
+            };
+            setMessages(prevMessages => [...prevMessages, errorMessage]);
+          }
+        };
+      
+        fetchTranslation();
         setButtonClicked(false);
-    }, [buttonClicked]);
+    }, [buttonClicked, inputText]);
 
     const handleSend = () => {
-        console.log("Hello");
-        setButtonClicked(true);
+        if (inputText.trim()) {
+            setButtonClicked(true);
+        }
     };
 
     const handleCancel = () => {
-        // Check if there are no messages before proceeding
         if (messages.length === 0) {
-            return; // Do nothing if no conversation has started
+            return;
         }
 
         const formattedMessages = messages.map(message => ({
@@ -106,17 +113,16 @@ const Chat = () => {
             timestamp: Date.now(),
         }));
 
-        // Add the conversation to history
         addHistoryEntry(Date.now().toString(), formattedMessages);
-
-        // Navigate to ModeSelector or History
         navigator.navigate("History");
     };
 
     const renderMessage = ({ item }: { item: { id: string; text: string; isUser: boolean } }) => {
         return (
             <View style={[styles.messageContainer, item.isUser ? styles.userMessage : styles.responseMessage]}>
-                <Text style={[styles.messageText, item.isUser ? styles.userText : styles.responseText]}>{item.text}</Text>
+                <Text style={[styles.messageText, item.isUser ? styles.userText : styles.responseText]}>
+                    {item.text}
+                </Text>
             </View>
         );
     };
@@ -146,13 +152,18 @@ const Chat = () => {
                     value={inputText}
                     onChangeText={setInputText}
                 />
-                <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
+                <TouchableOpacity 
+                    style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
+                    onPress={handleSend}
+                    disabled={!inputText.trim()}
+                >
                     <Text style={styles.sendButtonText}>Send</Text>
                 </TouchableOpacity>
             </View>
         </View>
     );
 };
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -189,12 +200,12 @@ const styles = StyleSheet.create({
     },
     userMessage: {
         alignSelf: 'flex-end',
-        backgroundColor: '#007BFF',
+        backgroundColor: '#4CAF50', // Green background for user messages
     },
     responseMessage: {
         alignSelf: 'flex-start',
-        backgroundColor: '#ffffff',
-        borderColor: '#ccc',
+        backgroundColor: '#ffffff', // White background for responses
+        borderColor: '#e0e0e0',
         borderWidth: 1,
     },
     messageText: {
@@ -202,10 +213,10 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
     userText: {
-        color: '#fff',
+        color: '#fff', // White text for user messages
     },
     responseText: {
-        color: '#333',
+        color: '#333', // Dark text for responses
     },
     inputContainer: {
         flexDirection: 'row',
@@ -225,12 +236,16 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         marginRight: 10,
         backgroundColor: '#f9f9f9',
+        minHeight: 40,
     },
     sendButton: {
-        backgroundColor: '#007BFF',
+        backgroundColor: '#4CAF50', // Matching green color for send button
         borderRadius: 20,
         paddingVertical: 10,
         paddingHorizontal: 15,
+    },
+    sendButtonDisabled: {
+        backgroundColor: '#cccccc',
     },
     sendButtonText: {
         color: '#fff',
