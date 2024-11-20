@@ -6,6 +6,7 @@ import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useHistory } from './context/HistoryContext';
 import { Platform } from 'react-native';
+import Tts from 'react-native-tts';
 
 type TranslationRequest = {
     text: string;
@@ -30,71 +31,100 @@ const Chat = () => {
 
     useEffect(() => {
         if (!buttonClicked) return;
-      
+    
         const fetchTranslation = async () => {
-          try {
-            const baseUrl = Platform.select({
-              android: __DEV__ 
-                ? 'http://localhost:8000'
-                : 'http://your-prod-url.com',
-              ios: __DEV__
-                ? 'http://localhost:8000'
-                : 'http://your-prod-url.com',
-            });
-      
-            const data: TranslationRequest = {
-              text: inputText, // Use the actual input text
-              source_language: from,
-              target_language: to
-            };
-      
-            const response = await fetch(`${baseUrl}/translate/`, {
-              method: 'POST',
-              headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(data),
-            });
-      
-            if (!response.ok) {
-              const errorText = await response.text();
-              throw new Error(`Server error: ${response.status}`);
+            try {
+                const baseUrl = Platform.select({
+                    android: __DEV__
+                        ? 'http://localhost:8000'
+                        : 'http://your-prod-url.com',
+                    ios: __DEV__
+                        ? 'http://localhost:8000'
+                        : 'http://your-prod-url.com',
+                });
+    
+                const data: TranslationRequest = {
+                    text: inputText, // Use the actual input text
+                    source_language: from,
+                    target_language: to,
+                };
+    
+                const response = await fetch(`${baseUrl}/translate/`, {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+    
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Server error: ${response.status}`);
+                }
+    
+                const result: TranslationResponse = await response.json();
+    
+                // Add the user's message
+                setMessages((prevMessages) => [
+                    ...prevMessages,
+                    {
+                        id: Date.now().toString(),
+                        text: inputText,
+                        isUser: true,
+                    },
+                ]);
+    
+                // Add the translation response and read it aloud
+                setTimeout(() => {
+                    const translationMessage = {
+                        id: (Date.now() + 1).toString(),
+                        text: result.result,
+                        isUser: false,
+                    };
+    
+                    setMessages((prevMessages) => [...prevMessages, translationMessage]);
+    
+                    // Dynamic TTS based on target language
+                    Tts.voices().then((voices) => {
+                        const selectedVoice = voices.find((voice) =>
+                            voice.language.startsWith(to)
+                        );
+    
+                        if (selectedVoice) {
+                            Tts.setDefaultLanguage(selectedVoice.language);
+                        } else {
+                            console.warn(
+                                `Language ${to} not supported, falling back to default.`
+                            );
+                            Tts.setDefaultLanguage('en-US');
+                        }
+    
+                        // Set rate and pitch for better pronunciation
+                        Tts.setDefaultRate(0.5);
+                        Tts.setDefaultPitch(1.0);
+    
+                        // Speak the translated text
+                        Tts.speak(result.result);
+                    });
+                }, 500);
+    
+                setInputText(''); // Clear input after sending
+            } catch (error) {
+                const errorMessage = {
+                    id: Date.now().toString(),
+                    text: `Error: ${error.message}`,
+                    isUser: false,
+                };
+                setMessages((prevMessages) => [...prevMessages, errorMessage]);
             }
-      
-            const result: TranslationResponse = await response.json();
-            
-            // First add the user's message
-            setMessages(prevMessages => [...prevMessages, {
-              id: Date.now().toString(),
-              text: inputText,
-              isUser: true
-            }]);
-
-            // Then add the translation response
-            setTimeout(() => {
-              setMessages(prevMessages => [...prevMessages, {
-                id: (Date.now() + 1).toString(),
-                text: result.result,
-                isUser: false
-              }]);
-            }, 500);
-
-            setInputText(''); // Clear input after sending
-      
-          } catch (error) {
-            const errorMessage = {
-              id: Date.now().toString(),
-              text: `Error: ${error.message}`,
-              isUser: false
-            };
-            setMessages(prevMessages => [...prevMessages, errorMessage]);
-          }
         };
-      
+    
         fetchTranslation();
         setButtonClicked(false);
-    }, [buttonClicked, inputText]);
+    }, [buttonClicked, inputText, from, to]);
+    
+      
 
     const handleSend = () => {
         if (inputText.trim()) {
